@@ -1,31 +1,27 @@
-async function initTilt() {
+function updateHolo(x, y) {
+  const el = document.getElementById('hello');
+  // x, y 값을 배경 위치에 적용
+  const offsetX = 50 + x * 2;
+  const offsetY = 50 + y * 2;
+  el.style.backgroundPosition = `${offsetX}% ${offsetY}%`;
+}
+
+async function init() {
   if (
     typeof DeviceOrientationEvent !== 'undefined' &&
     typeof DeviceOrientationEvent.requestPermission === 'function'
   ) {
     try {
       const perm = await DeviceOrientationEvent.requestPermission();
-      if (perm !== 'granted') {
-        alert('센서 권한이 필요합니다!');
-        return;
-      }
+      if (perm !== 'granted') return alert('허용 필요!');
     } catch (e) {
-      alert('권한 요청 실패');
-      return;
+      return alert('에러 발생');
     }
   }
 
-  VanillaTilt.init(document.querySelectorAll('.holo-card'), {
-    max: 25,
-    speed: 500,
-    glare: true,
-    'max-glare': 0.7,
-    gyroscope: true,
-    gyroscopeMinAngleX: -45,
-    gyroscopeMaxAngleX: 45,
-    gyroscopeMinAngleY: -45,
-    gyroscopeMaxAngleY: 45,
+  window.addEventListener('deviceorientation', (e) => {
+    updateHolo(e.gamma || 0, e.beta || 0);
   });
 }
 
-document.querySelector('#enable').addEventListener('click', initTilt);
+document.getElementById('enable').addEventListener('click', init);
