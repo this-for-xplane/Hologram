@@ -1,3 +1,5 @@
+console.log('script.js loaded');
+
 function updateHolo(x, y) {
   const el = document.getElementById('hello');
   // x, y는 -1 ~ 1 범위 (중앙 기준)
