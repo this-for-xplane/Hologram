@@ -1,0 +1,25 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #0d0d0d;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: sans-serif;
+}
+
+.card {
+  width: 280px;
+  height: 140px;
+  background: linear-gradient(145deg, #2a2a2a, #000);
+  border-radius: 30px;
+  color: #00ffff;
+  font-size: 2rem;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 255, 255, 0.1);
+  transition: transform 0.2s ease;
+}
