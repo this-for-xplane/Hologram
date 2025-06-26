@@ -34,7 +34,7 @@ body {
   transition: background-position 0.1s linear;
 }
 
-/* 빛 효과용 반투명 레이어 */
+/* 빛 효과용 반투명 레이어
 .holo-text::before {
   content: '';
   position: absolute;
@@ -49,3 +49,4 @@ body {
   filter: blur(30px);
   transition: top 0.15s ease, left 0.15s ease;
 }
+ */
