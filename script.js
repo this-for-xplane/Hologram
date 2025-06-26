@@ -1,15 +1,27 @@
 const holoText = document.getElementById('hello');
 
-function updateHolo(x, y) {
-  // x, y는 -1 ~ 1 범위
-  const offsetX = 50 + x * 30;  // 무지개 배경 움직임
-  const offsetY = 50 + y * 30;
+let latestX = 0;
+let latestY = 0;
+let ticking = false;
+
+function updateHoloRaf() {
+  const offsetX = 50 + latestX * 30;
+  const offsetY = 50 + latestY * 30;
 
   holoText.style.backgroundPosition = `${offsetX}% ${offsetY}%`;
-
-  // 빛 위치 업데이트 (반짝임 레이어)
   holoText.style.setProperty('--light-x', `${offsetX}%`);
   holoText.style.setProperty('--light-y', `${offsetY}%`);
+
+  ticking = false;
+}
+
+function scheduleUpdate(x, y) {
+  latestX = x;
+  latestY = y;
+  if (!ticking) {
+    ticking = true;
+    requestAnimationFrame(updateHoloRaf);
+  }
 }
 
 async function init() {
@@ -29,23 +41,21 @@ async function init() {
     }
 
     window.addEventListener('deviceorientation', (e) => {
-      updateHolo(e.gamma / 45, -e.beta / 45); // beta는 y축 반전
+      scheduleUpdate(e.gamma / 45, -e.beta / 45);
     });
   } else {
-    // PC나 센서 없는 환경용 마우스 이벤트
     window.addEventListener('mousemove', (e) => {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
       const x = (e.clientX - centerX) / centerX;
       const y = (e.clientY - centerY) / centerY;
-      updateHolo(x, y);
+      scheduleUpdate(x, y);
     });
   }
 }
 
 document.getElementById('enable').addEventListener('click', init);
 
-// PC 환경에서 버튼 없이 바로 실행
 if (!('DeviceOrientationEvent' in window)) {
   init();
 }
