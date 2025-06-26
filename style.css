@@ -1,27 +1,30 @@
-function updateHolo(x, y) {
-  const el = document.getElementById('hello');
-  // x, y 값을 배경 위치에 적용
-  const offsetX = 50 + x * 2;
-  const offsetY = 50 + y * 2;
-  el.style.backgroundPosition = `${offsetX}% ${offsetY}%`;
+body {
+  background: #111;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
 }
 
-async function init() {
-  if (
-    typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof DeviceOrientationEvent.requestPermission === 'function'
-  ) {
-    try {
-      const perm = await DeviceOrientationEvent.requestPermission();
-      if (perm !== 'granted') return alert('허용 필요!');
-    } catch (e) {
-      return alert('에러 발생');
-    }
-  }
-
-  window.addEventListener('deviceorientation', (e) => {
-    updateHolo(e.gamma || 0, e.beta || 0);
-  });
+#enable {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background: cyan;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
 }
 
-document.getElementById('enable').addEventListener('click', init);
+.holo-text {
+  font-size: 5rem;
+  font-weight: 900;
+  color: transparent;
+  background: url('holo.jpg') repeat;
+  background-size: 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  user-select: none;
+  transition: background-position 0.1s linear;
+}
