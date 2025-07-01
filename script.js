@@ -2,7 +2,10 @@ const holoText = document.getElementById('hello');
 
 let latestX = 0;
 let latestY = 0;
+let smoothedX = 0;
+let smoothedY = 0;
 let ticking = false;
+const alpha = 0.1; // 스무딩 정도 (0~1 사이, 낮을수록 부드러움)
 
 function updateHoloRaf() {
   const offsetX = 50 + latestX * 30;
@@ -16,8 +19,17 @@ function updateHoloRaf() {
 }
 
 function scheduleUpdate(x, y) {
-  latestX = x;
-  latestY = y;
+  // 센서값 범위 제한 (-1 ~ 1)
+  x = Math.max(-1, Math.min(1, x));
+  y = Math.max(-1, Math.min(1, y));
+
+  // 스무딩 필터 적용
+  smoothedX = alpha * x + (1 - alpha) * smoothedX;
+  smoothedY = alpha * y + (1 - alpha) * smoothedY;
+
+  latestX = smoothedX;
+  latestY = smoothedY;
+
   if (!ticking) {
     ticking = true;
     requestAnimationFrame(updateHoloRaf);
