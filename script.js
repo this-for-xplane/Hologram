@@ -1,43 +1,61 @@
-const btn = document.getElementById('enable');
+const btn = document.getElementById('holoBtn');
+const guide = document.querySelector('.guide');
 
-function updateHolo(gamma, beta) {
-  // 1. 화면 중앙 상단(광원)과의 각도 계산
-  // 기기가 기울어짐에 따라 '사용자의 눈'과 '광원' 사이의 상대 각도가 변하는 것을 시뮬레이션
-  
-  // 가상의 광원 위치에 따른 각도 (기울기 값을 각도로 변환)
-  // 화면 중앙 상단 조명을 기준으로 하기 위해 beta(앞뒤)와 gamma(좌우)를 조합
-  const angle = (gamma * 2) + (beta * 2);
-  
-  // 2. 테두리에 적용할 각도 업데이트 (음각 테두리가 빛을 튕겨내는 느낌)
-  btn.style.setProperty('--angle', `${angle}deg`);
-  
-  // 3. 빛의 강도 (기울기가 심할수록 난반사가 강해짐)
-  const intensity = 0.3 + (Math.abs(gamma) + Math.abs(beta)) / 90;
-  btn.style.setProperty('--opacity', Math.min(intensity, 0.8));
-
-  // 버튼 자체의 회전은 삭제 (음각 내부의 빛만 움직이도록 함)
+// 기울기 값을 배경 위치 %로 변환하는 함수
+function mapRange(value, inMin, inMax, outMin, outMax) {
+  return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }
 
-async function init() {
+function updateHolo(gamma, beta) {
+  // gamma: 좌우 기울기 (-90 ~ 90)
+  // beta: 앞뒤 기울기 (-180 ~ 180)
+
+  // 감도 조절 (너무 많이 기울이지 않아도 색이 변하도록 범위 제한)
+  const tiltX = Math.max(-30, Math.min(30, gamma));
+  const tiltY = Math.max(-30, Math.min(30, beta));
+
+  // 핵심: 기울기 반대 방향으로 움직이도록 좌표 계산
+  // 오른쪽으로 기울이면(+gamma) -> 배경은 왼쪽으로 이동(낮은 %)
+  const posX = mapRange(tiltX, -30, 30, 80, 20); // 80% -> 20% 로 역방향 매핑
+  
+  // 아래로 기울이면(+beta) -> 배경은 위로 이동(낮은 %)
+  const posY = mapRange(tiltY, -30, 30, 80, 20);
+
+  // CSS 변수 업데이트
+  btn.style.setProperty('--pos-x', `${posX}%`);
+  btn.style.setProperty('--pos-y', `${posY}%`);
+}
+
+async function initSensors() {
+  // iOS 13+ 권한 요청
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     try {
-      const perm = await DeviceOrientationEvent.requestPermission();
-      if (perm === 'granted') {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      if (permission === 'granted') {
         window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
+        guide.style.display = 'none';
+      } else {
+        alert("센서 권한이 필요합니다.");
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      alert("권한 요청 오류발생");
+    }
   } else {
-    // 안드로이드 및 일반 환경
+    // 안드로이드 및 미지원 기기 (바로 실행)
     window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
-    
-    // 마우스 대응 (광원과의 거리에 따라 계산)
+    guide.style.display = 'none';
+
+    // PC 테스트용 마우스 이벤트
     window.addEventListener('mousemove', (e) => {
-      const dx = e.clientX - window.innerWidth / 2;
-      const dy = e.clientY - 0; // 화면 상단
-      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-      btn.style.setProperty('--angle', `${angle}deg`);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        // 마우스 위치를 가상의 기울기 값으로 변환
+        const gamma = (e.clientX / w - 0.5) * 60; // -30 ~ 30 범위 시뮬레이션
+        const beta = (e.clientY / h - 0.5) * 60;
+        updateHolo(gamma, beta);
     });
   }
 }
 
-btn.addEventListener('click', init, { once: true });
+// 버튼 클릭 시 센서 활성화 (안드로이드 크롬 정책 대응)
+btn.addEventListener('click', initSensors, { once: true });
