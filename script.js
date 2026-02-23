@@ -1,73 +1,46 @@
-const holoText = document.getElementById('hello');
+const btn = document.getElementById('enable');
+let rafId = null;
 
-let latestX = 0;
-let latestY = 0;
-let smoothedX = 0;
-let smoothedY = 0;
-let ticking = false;
-const alpha = 0.1; // 스무딩 정도 (0~1 사이, 낮을수록 부드러움)
+function updateHolo(gamma, beta) {
+  // 센서 데이터 정규화 (-1 ~ 1)
+  const x = Math.max(-1, Math.min(1, gamma / 45));
+  const y = Math.max(-1, Math.min(1, beta / 45));
 
-function updateHoloRaf() {
-  const offsetX = 50 + latestX * 30;
-  const offsetY = 50 + latestY * 30;
+  // CSS 변수 업데이트
+  // 중심점 50% 기준 이동
+  const posX = 50 + (x * 50);
+  const posY = 50 + (y * 50);
+  // 기울기에 따른 색상 각도 (0 ~ 360)
+  const hue = ((x + y + 2) / 4) * 360;
 
-  holoText.style.backgroundPosition = `${offsetX}% ${offsetY}%`;
-  holoText.style.setProperty('--light-x', `${offsetX}%`);
-  holoText.style.setProperty('--light-y', `${offsetY}%`);
-
-  ticking = false;
-}
-
-function scheduleUpdate(x, y) {
-  // 센서값 범위 제한 (-1 ~ 1)
-  x = Math.max(-1, Math.min(1, x));
-  y = Math.max(-1, Math.min(1, y));
-
-  // 스무딩 필터 적용
-  smoothedX = alpha * x + (1 - alpha) * smoothedX;
-  smoothedY = alpha * y + (1 - alpha) * smoothedY;
-
-  latestX = smoothedX;
-  latestY = smoothedY;
-
-  if (!ticking) {
-    ticking = true;
-    requestAnimationFrame(updateHoloRaf);
-  }
+  btn.style.setProperty('--x', `${posX}%`);
+  btn.style.setProperty('--y', `${posY}%`);
+  btn.style.setProperty('--h', hue);
+  
+  // 버튼 자체도 살짝 기울어지게 (3D 입체감)
+  btn.style.transform = `perspective(500px) rotateX(${-y * 15}deg) rotateY(${x * 15}deg)`;
 }
 
 async function init() {
-  if (
-    typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof DeviceOrientationEvent.requestPermission === 'function'
-  ) {
-    try {
-      const perm = await DeviceOrientationEvent.requestPermission();
-      if (perm !== 'granted') {
-        alert('센서 권한이 필요합니다!');
-        return;
-      }
-    } catch (e) {
-      alert('센서 권한 요청 중 에러가 발생했습니다.');
-      return;
+  // iOS 권한 요청
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    const permission = await DeviceOrientationEvent.requestPermission();
+    if (permission === 'granted') {
+      window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
     }
-
-    window.addEventListener('deviceorientation', (e) => {
-      scheduleUpdate(e.gamma / 45, -e.beta / 45);
-    });
   } else {
+    // 안드로이드/데스크탑
+    window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
+    
+    // 마우스 지원
     window.addEventListener('mousemove', (e) => {
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const x = (e.clientX - centerX) / centerX;
-      const y = (e.clientY - centerY) / centerY;
-      scheduleUpdate(x, y);
+      const rect = btn.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / rect.width * 2 - 1;
+      const my = (e.clientY - rect.top) / rect.height * 2 - 1;
+      updateHolo(mx * 45, my * 45);
     });
   }
+  btn.textContent = "HI MINJUN"; // 텍스트 변경
 }
 
-document.getElementById('enable').addEventListener('click', init);
-
-if (!('DeviceOrientationEvent' in window)) {
-  init();
-}
+btn.addEventListener('click', init, { once: true });
