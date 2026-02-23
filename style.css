@@ -1,51 +1,53 @@
+
 :root {
-  --diffraction-map: none;
+  --diffraction: none;
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.2'/%3E%3C/svg%3E");
 }
 
 body {
-  margin: 0;
-  height: 100vh;
-  background: #ffffff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
+  margin: 0; height: 100vh;
+  display: flex; justify-content: center; align-items: center;
+  background: #fdfdfd; /* 밝은 배경 */
 }
 
 .holo-card {
   position: relative;
-  width: 280px;
-  height: 280px;
-  background: #f0f0f0; /* 밝은 실버 베이스 */
-  border-radius: 20px;
+  width: 320px; height: 320px;
+  background: #e0e0e0;
+  border-radius: 8px; /* 너무 둥글지 않게 */
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
   cursor: pointer;
-  border: 1px solid #ddd;
+  border: 1px solid #d1d1d1;
 }
 
+/* 항공기 표면 같은 울퉁불퉁한 질감 */
+.surface-texture {
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 물리 기반 난반사 레이어 */
 .specular-layer {
   position: absolute;
-  inset: -100%;
+  inset: -20%;
+  background: var(--diffraction);
+  /* 원형 뭉침을 막기 위해 screen과 overlay 조합 */
+  mix-blend-mode: screen; 
+  filter: contrast(1.1) brightness(1.1) saturate(0.8); /* 색을 조금 죽여서 자연스럽게 */
   pointer-events: none;
-  background: var(--diffraction-map);
-  /* exclusion과 hard-light의 조합으로 흰색 뭉침을 방지하고 색상을 선명하게 표현 */
-  mix-blend-mode: exclusion;
-  filter: saturate(2.5) contrast(1.2) brightness(1.1);
-  opacity: 0.9;
 }
 
 .content {
-  position: relative;
-  z-index: 10;
-  text-align: center;
-  color: #000;
+  position: relative; z-index: 10;
+  padding: 30px;
+  color: #333;
   mix-blend-mode: multiply;
-  opacity: 0.8;
+  font-family: 'Courier New', Courier, monospace; /* 엔지니어링 느낌 */
 }
 
-.logo { font-size: 4.5rem; font-weight: 900; letter-spacing: -2px; }
-.serial { font-size: 0.7rem; font-weight: 700; letter-spacing: 4px; }
+.logo { font-size: 3rem; font-weight: 900; }
