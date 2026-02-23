@@ -1,7 +1,6 @@
 :root {
-  --x: 50%;
-  --y: 50%;
-  --h: 0;
+  --angle: 0deg;
+  --opacity: 0.5;
 }
 
 body {
@@ -10,69 +9,61 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #151515;
+  background: #111;
 }
 
-.holo-sticker {
+.holo-button {
   position: relative;
-  width: 260px;
-  height: 80px;
+  width: 280px;
+  height: 90px;
+  background: #222; /* 어두운 기본색 */
   border: none;
-  border-radius: 12px;
-  background-color: #333;
-  /* 1. 베이스: 금속성 은색 느낌 */
-  background-image: 
-    linear-gradient(135deg, #888 0%, #ddd 50%, #888 100%);
+  border-radius: 16px;
+  padding: 4px; /* 테두리 두께 */
   cursor: pointer;
   overflow: hidden;
   outline: none;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  /* 음각 느낌을 주는 내부 그림자 */
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.8), 0 2px 5px rgba(255,255,255,0.1);
 }
 
-/* 2. 홀로그램 난반사 레이어 (가장 핵심) */
-.holo-sticker::before {
-  content: '';
-  position: absolute;
-  inset: -100%;
-  /* 아주 촘촘한 무지개 띠들이 난반사되는 효과 */
-  background-image: 
-    repeating-linear-gradient(
-      calc(var(--h) * 1deg),
-      transparent 0%,
-      hsla(calc(var(--h) + 0), 70%, 70%, 0.2) 2%,
-      transparent 4%,
-      hsla(calc(var(--h) + 120), 70%, 70%, 0.2) 6%,
-      transparent 8%,
-      hsla(calc(var(--h) + 240), 70%, 70%, 0.2) 10%
-    ),
-    radial-gradient(
-      circle at var(--x) var(--y),
-      rgba(255, 255, 255, 0.6) 0%,
-      transparent 30%
-    );
-  background-size: 200% 200%;
-  mix-blend-mode: color-dodge;
-  filter: contrast(1.5) brightness(1.1);
-  pointer-events: none;
-}
-
-/* 3. 스티커 특유의 미세한 질감(노이즈) 추가 */
-.holo-sticker::after {
-  content: '';
+/* 테두리(음각 사선) 난반사 레이어 */
+.holo-border {
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3 Blackboard %3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.15;
-  mix-blend-mode: overlay;
-  pointer-events: none;
+  background: conic-gradient(
+    from var(--angle),
+    #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000
+  );
+  filter: saturate(1.5) brightness(1.2) blur(2px);
+  mix-blend-mode: screen;
+  opacity: var(--opacity);
+}
+
+/* 안쪽 면: 테두리보다 변화가 적고 평평함 */
+.holo-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #222;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  /* 안쪽 면에도 미세한 홀로그램 기운 */
+  background-image: radial-gradient(
+    circle at 50% -20%, 
+    hsla(calc(parseFloat(var(--angle)) * 1), 70%, 70%, 0.15), 
+    transparent 80%
+  );
 }
 
 .text {
-  position: relative;
-  z-index: 5;
-  color: #000; /* 스티커 위 검정 각인 느낌 */
+  color: #eee;
   font-size: 1.6rem;
   font-weight: 900;
-  letter-spacing: 3px;
-  opacity: 0.8;
+  letter-spacing: 4px;
+  z-index: 5;
+  text-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
