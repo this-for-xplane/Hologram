@@ -1,61 +1,55 @@
 const btn = document.getElementById('holoBtn');
-const guide = document.querySelector('.guide');
-
-// 기울기 값을 배경 위치 %로 변환하는 함수
-function mapRange(value, inMin, inMax, outMin, outMax) {
-  return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-}
 
 function updateHolo(gamma, beta) {
-  // gamma: 좌우 기울기 (-90 ~ 90)
-  // beta: 앞뒤 기울기 (-180 ~ 180)
+  // 1. 센서 값 정규화 (-1 ~ 1)
+  // 40도로 제한하여 살짝만 기울여도 크게 반응하도록 감도 상향
+  const x = Math.max(-1, Math.min(1, gamma / 40));
+  const y = Math.max(-1, Math.min(1, beta / 40));
 
-  // 감도 조절 (너무 많이 기울이지 않아도 색이 변하도록 범위 제한)
-  const tiltX = Math.max(-30, Math.min(30, gamma));
-  const tiltY = Math.max(-30, Math.min(30, beta));
+  // 2. 조명 반사 위치 계산 (사용자 요청: 역방향 이동)
+  // 기기를 오른쪽(+x)으로 기울이면 반사광은 왼쪽(-rx)으로 확 이동
+  const rx = 50 - (x * 80); 
+  const ry = 50 - (y * 80);
 
-  // 핵심: 기울기 반대 방향으로 움직이도록 좌표 계산
-  // 오른쪽으로 기울이면(+gamma) -> 배경은 왼쪽으로 이동(낮은 %)
-  const posX = mapRange(tiltX, -30, 30, 80, 20); // 80% -> 20% 로 역방향 매핑
-  
-  // 아래로 기울이면(+beta) -> 배경은 위로 이동(낮은 %)
-  const posY = mapRange(tiltY, -30, 30, 80, 20);
+  // 3. 실시간 색상 회전 각도 계산 (핵심)
+  // X, Y 기울기 비율을 삼각함수로 계산하여 광원이 비추는 '절대 각도'를 산출
+  // 이 값에 의해 어떤 각도일 때 초록색이 보이고, 어떤 각도일 때 마젠타가 보일지 실시간 결정됨
+  const angle = Math.atan2(y, x) * (180 / Math.PI);
 
-  // CSS 변수 업데이트
-  btn.style.setProperty('--pos-x', `${posX}%`);
-  btn.style.setProperty('--pos-y', `${posY}%`);
+  // 4. 기울기 강도 계산 (평평할 땐 색이 없고, 기울일수록 색이 진해짐)
+  // 피타고라스 정리로 중심으로부터의 거리 계산
+  const intensity = Math.min(1, Math.sqrt(x * x + y * y) * 1.5);
+
+  // CSS 변수에 계산된 값 주입 (즉각적인 렌더링)
+  btn.style.setProperty('--rx', `${rx}%`);
+  btn.style.setProperty('--ry', `${ry}%`);
+  btn.style.setProperty('--angle', `${angle}deg`);
+  btn.style.setProperty('--intensity', intensity);
 }
 
 async function initSensors() {
-  // iOS 13+ 권한 요청
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     try {
       const permission = await DeviceOrientationEvent.requestPermission();
       if (permission === 'granted') {
         window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
-        guide.style.display = 'none';
-      } else {
-        alert("센서 권한이 필요합니다.");
       }
-    } catch (e) {
-      alert("권한 요청 오류발생");
-    }
+    } catch (e) { console.error(e); }
   } else {
-    // 안드로이드 및 미지원 기기 (바로 실행)
+    // 안드로이드 및 데스크탑
     window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
-    guide.style.display = 'none';
 
-    // PC 테스트용 마우스 이벤트
+    // PC 마우스 테스트 시뮬레이션
     window.addEventListener('mousemove', (e) => {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        // 마우스 위치를 가상의 기울기 값으로 변환
-        const gamma = (e.clientX / w - 0.5) * 60; // -30 ~ 30 범위 시뮬레이션
-        const beta = (e.clientY / h - 0.5) * 60;
-        updateHolo(gamma, beta);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // 화면 중앙을 0으로 기준 잡고 -40 ~ +40 기울기 시뮬레이션
+      const gamma = (e.clientX / w - 0.5) * 80; 
+      const beta = (e.clientY / h - 0.5) * 80;
+      updateHolo(gamma, beta);
     });
   }
 }
 
-// 버튼 클릭 시 센서 활성화 (안드로이드 크롬 정책 대응)
+// 상호작용 후 센서 권한/이벤트 활성화
 btn.addEventListener('click', initSensors, { once: true });
