@@ -2,7 +2,6 @@
   --x: 50%;
   --y: 50%;
   --h: 0;
-  --o: 0.8;
 }
 
 body {
@@ -11,78 +10,69 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #000; /* 배경을 완전히 검게 하여 대비 극대화 */
-  perspective: 1000px;
+  background: #151515;
 }
 
-.holo-btn {
+.holo-sticker {
   position: relative;
-  width: 280px;
-  height: 90px;
-  background: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
+  width: 260px;
+  height: 80px;
+  border: none;
+  border-radius: 12px;
+  background-color: #333;
+  /* 1. 베이스: 금속성 은색 느낌 */
+  background-image: 
+    linear-gradient(135deg, #888 0%, #ddd 50%, #888 100%);
   cursor: pointer;
   overflow: hidden;
   outline: none;
-  /* 버튼 주변에 퍼지는 광운(Glow) */
-  box-shadow: 
-    0 0 30px hsla(var(--h), 100%, 50%, 0.3),
-    0 0 10px rgba(255, 255, 255, 0.2);
-  transition: transform 0.1s ease-out;
-  transform-style: preserve-3d;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-/* 1. 무지개 스펙트럼 (진하고 선명하게) */
-.shimmer {
+/* 2. 홀로그램 난반사 레이어 (가장 핵심) */
+.holo-sticker::before {
+  content: '';
   position: absolute;
-  inset: -50%;
-  background: linear-gradient(
-    calc(var(--h) * 1deg),
-    #ff0000 0%,
-    #ffff00 15%,
-    #00ff00 30%,
-    #00ffff 50%,
-    #0000ff 65%,
-    #ff00ff 80%,
-    #ff0000 100%
-  );
-  background-size: 100% 100%;
+  inset: -100%;
+  /* 아주 촘촘한 무지개 띠들이 난반사되는 효과 */
+  background-image: 
+    repeating-linear-gradient(
+      calc(var(--h) * 1deg),
+      transparent 0%,
+      hsla(calc(var(--h) + 0), 70%, 70%, 0.2) 2%,
+      transparent 4%,
+      hsla(calc(var(--h) + 120), 70%, 70%, 0.2) 6%,
+      transparent 8%,
+      hsla(calc(var(--h) + 240), 70%, 70%, 0.2) 10%
+    ),
+    radial-gradient(
+      circle at var(--x) var(--y),
+      rgba(255, 255, 255, 0.6) 0%,
+      transparent 30%
+    );
+  background-size: 200% 200%;
   mix-blend-mode: color-dodge;
-  opacity: var(--o);
-  filter: brightness(1.5) contrast(1.5) saturate(2);
+  filter: contrast(1.5) brightness(1.1);
   pointer-events: none;
-  z-index: 2;
 }
 
-/* 2. 초강력 화이트 광원 (반사광) */
-.glare {
+/* 3. 스티커 특유의 미세한 질감(노이즈) 추가 */
+.holo-sticker::after {
+  content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at var(--x) var(--y),
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 255, 255, 0.4) 10%,
-    rgba(255, 255, 255, 0) 40%
-  );
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3 Blackboard %3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.15;
   mix-blend-mode: overlay;
-  z-index: 3;
   pointer-events: none;
 }
 
-/* 3. 버튼 텍스트 (입체감 부여) */
-.label {
+.text {
   position: relative;
-  z-index: 10;
-  color: #fff;
-  font-size: 1.8rem;
+  z-index: 5;
+  color: #000; /* 스티커 위 검정 각인 느낌 */
+  font-size: 1.6rem;
   font-weight: 900;
-  letter-spacing: 5px;
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
-  pointer-events: none;
-}
-
-/* 버튼 클릭 시 눌리는 효과 */
-.holo-btn:active {
-  transform: scale(0.95) rotateX(10deg);
+  letter-spacing: 3px;
+  opacity: 0.8;
 }
