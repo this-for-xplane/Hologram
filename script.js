@@ -1,43 +1,41 @@
 const btn = document.getElementById('enable');
 
 function updateHolo(gamma, beta) {
-  // -1 ~ 1 범위로 정규화
-  const x = Math.max(-1, Math.min(1, gamma / 45));
-  const y = Math.max(-1, Math.min(1, beta / 45));
+  // 1. 화면 중앙 상단(광원)과의 각도 계산
+  // 기기가 기울어짐에 따라 '사용자의 눈'과 '광원' 사이의 상대 각도가 변하는 것을 시뮬레이션
+  
+  // 가상의 광원 위치에 따른 각도 (기울기 값을 각도로 변환)
+  // 화면 중앙 상단 조명을 기준으로 하기 위해 beta(앞뒤)와 gamma(좌우)를 조합
+  const angle = (gamma * 2) + (beta * 2);
+  
+  // 2. 테두리에 적용할 각도 업데이트 (음각 테두리가 빛을 튕겨내는 느낌)
+  btn.style.setProperty('--angle', `${angle}deg`);
+  
+  // 3. 빛의 강도 (기울기가 심할수록 난반사가 강해짐)
+  const intensity = 0.3 + (Math.abs(gamma) + Math.abs(beta)) / 90;
+  btn.style.setProperty('--opacity', Math.min(intensity, 0.8));
 
-  // 빛의 중심점 (스티커 내부 위치)
-  const posX = 50 + (x * 50);
-  const posY = 50 + (y * 50);
-
-  // 난반사 각도 계산 (기울기에 따라 무지개 띠가 회전)
-  const hueAngle = (gamma + beta) * 2;
-
-  btn.style.setProperty('--x', `${posX}%`);
-  btn.style.setProperty('--y', `${posY}%`);
-  btn.style.setProperty('--h', hueAngle);
-
-  // 버튼 회전은 아주 미세하게 (2도 정도만)
-  btn.style.transform = `perspective(500px) rotateX(${-y * 3}deg) rotateY(${x * 3}deg)`;
+  // 버튼 자체의 회전은 삭제 (음각 내부의 빛만 움직이도록 함)
 }
 
 async function init() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     try {
-      const permission = await DeviceOrientationEvent.requestPermission();
-      if (permission === 'granted') {
+      const perm = await DeviceOrientationEvent.requestPermission();
+      if (perm === 'granted') {
         window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
       }
-    } catch (err) { console.error(err); }
+    } catch (e) { console.error(e); }
   } else {
     // 안드로이드 및 일반 환경
     window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
     
-    // 마우스 대응
+    // 마우스 대응 (광원과의 거리에 따라 계산)
     window.addEventListener('mousemove', (e) => {
-      const rect = btn.getBoundingClientRect();
-      const mx = (e.clientX - rect.left) / rect.width * 2 - 1;
-      const my = (e.clientY - rect.top) / rect.height * 2 - 1;
-      updateHolo(mx * 30, my * 30);
+      const dx = e.clientX - window.innerWidth / 2;
+      const dy = e.clientY - 0; // 화면 상단
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      btn.style.setProperty('--angle', `${angle}deg`);
     });
   }
 }
