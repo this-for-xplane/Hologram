@@ -1,93 +1,51 @@
-:root {
-  --rx: 50%;      /* 반사광 X 좌표 */
-  --ry: 50%;      /* 반사광 Y 좌표 */
-  --angle: 0deg;  /* 실시간 스펙트럼 회전 각도 */
-  --intensity: 0; /* 기울기에 따른 빛의 강도 */
-}
-
 body {
   margin: 0;
   height: 100vh;
+  background: #ffffff; /* 하얀 배경 */
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #ffffff; /* 하얀색 배경 */
-  font-family: sans-serif;
-}
-
-.holo-sticker {
-  position: relative;
-  width: 240px;
-  height: 240px; /* 사진처럼 정사각형에 가까운 비율 */
-  /* 실제 은박 스티커의 기본 베이스 색상 (약간 어두워야 빛이 쎔) */
-  background: linear-gradient(135deg, #a0a4a8, #d0d4d8, #a0a4a8);
-  border-radius: 16px;
   overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+  font-family: 'Inter', sans-serif;
+}
+
+.scene {
+  perspective: 1200px;
+}
+
+.holo-card {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  background: #bdc3c7; /* 기본 금속 베이스 */
+  border-radius: 20px;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
   transform-style: preserve-3d;
+  cursor: pointer;
 }
 
-/* 실시간 난반사 계산 레이어 */
-.holo-sticker::before {
-  content: '';
+/* 물리 기반 산란 레이어 */
+.specular-layer {
   position: absolute;
-  inset: -50%; /* 반사광이 밖으로 나갈 수 있게 여유 공간 */
-  
-  /* 1. radial-gradient: 하얗고 강렬한 직접 반사광 (조명)
-    2. conic-gradient: 각도(--angle)에 따라 불규칙하게 뻗어나가는 무지개 산란광
-  */
-  background: 
-    radial-gradient(
-      circle 120px at var(--rx) var(--ry),
-      rgba(255, 255, 255, calc(var(--intensity) * 1.5)) 0%,
-      rgba(255, 255, 255, 0) 100%
-    ),
-    conic-gradient(
-      from var(--angle) at var(--rx) var(--ry),
-      transparent 0deg,
-      rgba(0, 255, 255, var(--intensity)) 30deg,   /* 찌르는 듯한 시안 */
-      transparent 60deg,
-      rgba(255, 0, 255, var(--intensity)) 80deg,   /* 마젠타 */
-      rgba(255, 255, 0, var(--intensity)) 110deg,  /* 옐로우 */
-      transparent 140deg,
-      rgba(0, 255, 100, var(--intensity)) 190deg,  /* 그린 */
-      transparent 240deg,
-      rgba(0, 200, 255, var(--intensity)) 290deg,  /* 블루 */
-      transparent 360deg
-    );
-  
-  /* 은박 베이스와 합성하여 색을 타오르게 만듦 */
-  mix-blend-mode: color-dodge;
-  filter: contrast(1.8) brightness(1.1);
+  inset: -50%;
   pointer-events: none;
+  /* 핵심: JS에서 계산된 다층 그래디언트 수치들 */
+  background: var(--diffraction-map);
+  mix-blend-mode: color-dodge; /* 광원 합성을 위한 모드 */
+  filter: brightness(1.2) contrast(1.4);
 }
 
-/* 잉크로 인쇄된 듯한 검은색 텍스트 (빛의 영향을 받지 않음) */
-.holo-text {
+.content {
   position: relative;
   z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  text-align: center;
   color: #111;
-  mix-blend-mode: multiply; /* 실제 잉크가 은박에 묻은 듯한 블렌딩 */
-  pointer-events: none;
+  mix-blend-mode: multiply; /* 잉크 인쇄 효과 */
 }
 
-.brand {
-  font-size: 4rem;
-  font-weight: 900;
-  letter-spacing: 4px;
-  line-height: 1;
-}
-
-.sub {
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 8px;
-  margin-top: 5px;
-}
+.logo { font-size: 5rem; font-weight: 900; }
+.serial { font-size: 0.8rem; font-weight: 700; letter-spacing: 5px; }
