@@ -1,7 +1,8 @@
 :root {
-  /* 광원의 위치 좌표 (JS에서 실시간 업데이트) */
-  --pos-x: 50%;
-  --pos-y: 50%;
+  --rx: 50%;      /* 반사광 X 좌표 */
+  --ry: 50%;      /* 반사광 Y 좌표 */
+  --angle: 0deg;  /* 실시간 스펙트럼 회전 각도 */
+  --intensity: 0; /* 기울기에 따른 빛의 강도 */
 }
 
 body {
@@ -10,83 +11,83 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f0f2f5; /* 요청하신 밝은 배경 */
+  background-color: #ffffff; /* 하얀색 배경 */
   font-family: sans-serif;
 }
 
-.container {
-  text-align: center;
-}
-
-.guide {
-  margin-top: 20px;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-/* 홀로그램 스티커 본체 */
 .holo-sticker {
   position: relative;
-  width: 260px;
-  height: 90px;
-  /* 1. 베이스: 실제 스티커 같은 은색 금속 재질 */
-  background: linear-gradient(135deg, #e6e6e6, #ffffff, #cccccc);
-  border: none;
-  border-radius: 12px;
+  width: 240px;
+  height: 240px; /* 사진처럼 정사각형에 가까운 비율 */
+  /* 실제 은박 스티커의 기본 베이스 색상 (약간 어두워야 빛이 쎔) */
+  background: linear-gradient(135deg, #a0a4a8, #d0d4d8, #a0a4a8);
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-  transform: translateZ(0); /* 하드웨어 가속 */
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
 }
 
-/* 2. 핵심: 움직이는 홀로그램 난반사 레이어 */
+/* 실시간 난반사 계산 레이어 */
 .holo-sticker::before {
   content: '';
   position: absolute;
-  /* 그래디언트 맵을 실제 크기보다 훨씬 크게 만들어 부드러운 이동 구현 */
-  top: -100%; left: -100%; right: -100%; bottom: -100%;
+  inset: -50%; /* 반사광이 밖으로 나갈 수 있게 여유 공간 */
   
-  /* 첨부 사진의 색상 스펙트럼을 분석하여 구성한 대각선 그래디언트 */
-  background-image: repeating-linear-gradient(
-    115deg, /* 사진과 유사한 대각선 각도 */
-    transparent 0%,
-    rgba(0, 255, 255, 0.7) 15%, /* Cyan */
-    rgba(50, 255, 50, 0.7) 30%,  /* Green */
-    rgba(255, 255, 0, 0.7) 45%,  /* Yellow */
-    rgba(255, 0, 255, 0.7) 60%,  /* Magenta */
-    rgba(0, 150, 255, 0.7) 75%,  /* Blue */
-    transparent 90%
-  );
+  /* 1. radial-gradient: 하얗고 강렬한 직접 반사광 (조명)
+    2. conic-gradient: 각도(--angle)에 따라 불규칙하게 뻗어나가는 무지개 산란광
+  */
+  background: 
+    radial-gradient(
+      circle 120px at var(--rx) var(--ry),
+      rgba(255, 255, 255, calc(var(--intensity) * 1.5)) 0%,
+      rgba(255, 255, 255, 0) 100%
+    ),
+    conic-gradient(
+      from var(--angle) at var(--rx) var(--ry),
+      transparent 0deg,
+      rgba(0, 255, 255, var(--intensity)) 30deg,   /* 찌르는 듯한 시안 */
+      transparent 60deg,
+      rgba(255, 0, 255, var(--intensity)) 80deg,   /* 마젠타 */
+      rgba(255, 255, 0, var(--intensity)) 110deg,  /* 옐로우 */
+      transparent 140deg,
+      rgba(0, 255, 100, var(--intensity)) 190deg,  /* 그린 */
+      transparent 240deg,
+      rgba(0, 200, 255, var(--intensity)) 290deg,  /* 블루 */
+      transparent 360deg
+    );
   
-  background-size: 200% 200%;
-  /* JS로 계산된 역방향 좌표를 적용 */
-  background-position: var(--pos-x) var(--pos-y);
-  
-  /* 은색 베이스 위에 자연스럽게 합성 */
-  mix-blend-mode: overlay;
-  
-  /* 광택과 대비를 높여 리얼함 강조 */
-  filter: brightness(1.2) contrast(1.2);
+  /* 은박 베이스와 합성하여 색을 타오르게 만듦 */
+  mix-blend-mode: color-dodge;
+  filter: contrast(1.8) brightness(1.1);
   pointer-events: none;
-  will-change: background-position; /* 성능 최적화 */
-  transition: background-position 0.1s ease-out; /* 부드러운 움직임 */
 }
 
-/* 3. 스티커 표면의 미세한 노이즈 질감 (더 리얼하게) */
-.holo-sticker::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
-  pointer-events: none;
-  mix-blend-mode: soft-light;
-}
-
-.text {
+/* 잉크로 인쇄된 듯한 검은색 텍스트 (빛의 영향을 받지 않음) */
+.holo-text {
   position: relative;
-  z-index: 2;
-  color: #222; /* 사진처럼 검은색 글씨 */
-  font-size: 1.6rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #111;
+  mix-blend-mode: multiply; /* 실제 잉크가 은박에 묻은 듯한 블렌딩 */
+  pointer-events: none;
+}
+
+.brand {
+  font-size: 4rem;
   font-weight: 900;
-  letter-spacing: 2px;
+  letter-spacing: 4px;
+  line-height: 1;
+}
+
+.sub {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 8px;
+  margin-top: 5px;
 }
