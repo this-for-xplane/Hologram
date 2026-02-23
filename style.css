@@ -2,6 +2,7 @@
   --x: 50%;
   --y: 50%;
   --h: 0;
+  --o: 0.8;
 }
 
 body {
@@ -10,71 +11,78 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #0a0a0a;
+  background: #000; /* 배경을 완전히 검게 하여 대비 극대화 */
+  perspective: 1000px;
 }
 
-.holo-button {
+.holo-btn {
   position: relative;
-  width: 250px;
-  height: 80px;
-  background: #222;
-  border: none;
-  border-radius: 15px;
-  color: white;
-  font-size: 1.5rem;
-  font-weight: 900;
+  width: 280px;
+  height: 90px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
   cursor: pointer;
   overflow: hidden;
   outline: none;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-  transition: transform 0.1s ease;
+  /* 버튼 주변에 퍼지는 광운(Glow) */
+  box-shadow: 
+    0 0 30px hsla(var(--h), 100%, 50%, 0.3),
+    0 0 10px rgba(255, 255, 255, 0.2);
+  transition: transform 0.1s ease-out;
+  transform-style: preserve-3d;
 }
 
-/* 1. 기본 홀로그램 베이스 그래디언트 */
-.holo-button::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    115deg,
-    transparent 20%,
-    hsla(var(--h), 80%, 70%, 0.3) 40%,
-    hsla(calc(var(--h) + 60), 80%, 70%, 0.3) 50%,
-    hsla(var(--h), 80%, 70%, 0.3) 60%,
-    transparent 80%
-  );
-  background-size: 200% 200%;
-  background-position: var(--x) var(--y);
-  mix-blend-mode: overlay;
-}
-
-/* 2. 각도에 따라 움직이는 "진짜 빛" 스펙트럼 */
+/* 1. 무지개 스펙트럼 (진하고 선명하게) */
 .shimmer {
   position: absolute;
-  inset: 0;
+  inset: -50%;
+  background: linear-gradient(
+    calc(var(--h) * 1deg),
+    #ff0000 0%,
+    #ffff00 15%,
+    #00ff00 30%,
+    #00ffff 50%,
+    #0000ff 65%,
+    #ff00ff 80%,
+    #ff0000 100%
+  );
+  background-size: 100% 100%;
+  mix-blend-mode: color-dodge;
+  opacity: var(--o);
+  filter: brightness(1.5) contrast(1.5) saturate(2);
   pointer-events: none;
-  background-image: 
-    radial-gradient(
-      circle at var(--x) var(--y),
-      rgba(255, 255, 255, 0.8) 0%,
-      transparent 20%
-    ),
-    linear-gradient(
-      calc(var(--h) * 1deg),
-      rgba(255, 0, 0, 0.2) 0%,
-      rgba(0, 255, 0, 0.2) 33%,
-      rgba(0, 0, 255, 0.2) 66%,
-      rgba(255, 0, 0, 0.2) 100%
-    );
-  background-size: 200% 200%;
-  mix-blend-mode: color-dodge; /* 핵심: 색상을 타오르게 만듦 */
-  opacity: 0.8;
-  filter: brightness(1.2) contrast(1.2);
+  z-index: 2;
 }
 
-.holo-inner {
+/* 2. 초강력 화이트 광원 (반사광) */
+.glare {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--x) var(--y),
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0.4) 10%,
+    rgba(255, 255, 255, 0) 40%
+  );
+  mix-blend-mode: overlay;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* 3. 버튼 텍스트 (입체감 부여) */
+.label {
   position: relative;
-  z-index: 5;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  z-index: 10;
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 5px;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+}
+
+/* 버튼 클릭 시 눌리는 효과 */
+.holo-btn:active {
+  transform: scale(0.95) rotateX(10deg);
 }
