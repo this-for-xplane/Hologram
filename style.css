@@ -1,52 +1,80 @@
+:root {
+  --x: 50%;
+  --y: 50%;
+  --h: 0;
+}
+
 body {
   margin: 0;
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #111;
-  overflow: hidden;
-  flex-direction: column;
+  background: #0a0a0a;
 }
 
-#enable {
-  margin-bottom: 20px;
-  padding: 10px 20px;
-  background: cyan;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  user-select: none;
-}
-
-.holo-text {
+.holo-button {
   position: relative;
-  font-size: 5rem;
+  width: 250px;
+  height: 80px;
+  background: #222;
+  border: none;
+  border-radius: 15px;
+  color: white;
+  font-size: 1.5rem;
   font-weight: 900;
-  color: transparent;
-  background: url('holo.png') repeat;
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  user-select: none;
-  cursor: default;
-  transition: background-position 0.1s linear;
+  cursor: pointer;
+  overflow: hidden;
+  outline: none;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  transition: transform 0.1s ease;
 }
 
-/* 빛 효과용 반투명 레이어
-.holo-text::before {
+/* 1. 기본 홀로그램 베이스 그래디언트 */
+.holo-button::before {
   content: '';
   position: absolute;
-  top: var(--light-y, 50%);
-  left: var(--light-x, 50%);
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.8), transparent 70%);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  mix-blend-mode: screen;
-  filter: blur(30px);
-  transition: top 0.15s ease, left 0.15s ease;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    hsla(var(--h), 80%, 70%, 0.3) 40%,
+    hsla(calc(var(--h) + 60), 80%, 70%, 0.3) 50%,
+    hsla(var(--h), 80%, 70%, 0.3) 60%,
+    transparent 80%
+  );
+  background-size: 200% 200%;
+  background-position: var(--x) var(--y);
+  mix-blend-mode: overlay;
 }
- */
+
+/* 2. 각도에 따라 움직이는 "진짜 빛" 스펙트럼 */
+.shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(
+      circle at var(--x) var(--y),
+      rgba(255, 255, 255, 0.8) 0%,
+      transparent 20%
+    ),
+    linear-gradient(
+      calc(var(--h) * 1deg),
+      rgba(255, 0, 0, 0.2) 0%,
+      rgba(0, 255, 0, 0.2) 33%,
+      rgba(0, 0, 255, 0.2) 66%,
+      rgba(255, 0, 0, 0.2) 100%
+    );
+  background-size: 200% 200%;
+  mix-blend-mode: color-dodge; /* 핵심: 색상을 타오르게 만듦 */
+  opacity: 0.8;
+  filter: brightness(1.2) contrast(1.2);
+}
+
+.holo-inner {
+  position: relative;
+  z-index: 5;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
