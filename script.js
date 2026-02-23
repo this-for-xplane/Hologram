@@ -1,55 +1,62 @@
-const btn = document.getElementById('holoBtn');
+const card = document.getElementById('holoCard');
 
-function updateHolo(gamma, beta) {
-  // 1. 센서 값 정규화 (-1 ~ 1)
-  // 40도로 제한하여 살짝만 기울여도 크게 반응하도록 감도 상향
-  const x = Math.max(-1, Math.min(1, gamma / 40));
-  const y = Math.max(-1, Math.min(1, beta / 40));
+// 1. 가상의 광원 위치 설정 (화면 정중앙 상단 뒤쪽)
+const lightSource = { x: 0, y: -1, z: 2 }; 
 
-  // 2. 조명 반사 위치 계산 (사용자 요청: 역방향 이동)
-  // 기기를 오른쪽(+x)으로 기울이면 반사광은 왼쪽(-rx)으로 확 이동
-  const rx = 50 - (x * 80); 
-  const ry = 50 - (y * 80);
+function updateLighting(gamma, beta) {
+    // 2. 기기의 기울기를 라디안으로 변환 (Normal Vector 계산용)
+    const radG = (gamma * Math.PI) / 180;
+    const radB = (beta * Math.PI) / 180;
 
-  // 3. 실시간 색상 회전 각도 계산 (핵심)
-  // X, Y 기울기 비율을 삼각함수로 계산하여 광원이 비추는 '절대 각도'를 산출
-  // 이 값에 의해 어떤 각도일 때 초록색이 보이고, 어떤 각도일 때 마젠타가 보일지 실시간 결정됨
-  const angle = Math.atan2(y, x) * (180 / Math.PI);
+    // 3. 표면 법선 벡터 (기울기에 따른 표면의 방향)
+    const nx = Math.sin(radG);
+    const ny = Math.sin(radB);
+    const nz = Math.cos(radG) * Math.cos(radB);
 
-  // 4. 기울기 강도 계산 (평평할 땐 색이 없고, 기울일수록 색이 진해짐)
-  // 피타고라스 정리로 중심으로부터의 거리 계산
-  const intensity = Math.min(1, Math.sqrt(x * x + y * y) * 1.5);
+    // 4. 입사광 대비 반사 각도 계산 (가상의 도트 프로덕트 응용)
+    // 광원과 표면의 각도에 따라 '회절'되는 색상의 파장값을 도출
+    const viewFactor = nx * lightSource.x + ny * lightSource.y + nz * lightSource.z;
+    
+    // 5. 파장(Wavelength) 시뮬레이션
+    // 각도에 따라 0(Red) ~ 360(Violet) 사이의 색상값을 물리적으로 매핑
+    const baseHue = (viewFactor + 1) * 180;
+    
+    // 6. 다중 조명 산란 계산 (진짜 홀로그램의 난반사 구현)
+    // 하나의 띠가 아니라 각도별로 여러 파장이 겹치도록 계산
+    let diffractionMap = `radial-gradient(
+        circle at ${50 - gamma}% ${50 - beta}%,
+        hsl(${baseHue}, 80%, 70%) 0%,
+        hsl(${(baseHue + 40) % 360}, 70%, 60%) 20%,
+        hsl(${(baseHue + 80) % 360}, 60%, 50%) 40%,
+        transparent 70%
+    ), linear-gradient(
+        ${gamma + beta}deg,
+        transparent,
+        hsla(${(baseHue + 180) % 360}, 80%, 70%, 0.3) ${50 + gamma}%,
+        transparent
+    )`;
 
-  // CSS 변수에 계산된 값 주입 (즉각적인 렌더링)
-  btn.style.setProperty('--rx', `${rx}%`);
-  btn.style.setProperty('--ry', `${ry}%`);
-  btn.style.setProperty('--angle', `${angle}deg`);
-  btn.style.setProperty('--intensity', intensity);
+    // 7. 실시간 변수 주입
+    card.style.setProperty('--diffraction-map', diffractionMap);
+    
+    // 실제 카드도 물리적으로 아주 미세하게 기울여 입체감 유지
+    card.style.transform = `rotateY(${gamma * 0.1}deg) rotateX(${-beta * 0.1}deg)`;
 }
 
-async function initSensors() {
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    try {
-      const permission = await DeviceOrientationEvent.requestPermission();
-      if (permission === 'granted') {
-        window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
-      }
-    } catch (e) { console.error(e); }
-  } else {
-    // 안드로이드 및 데스크탑
-    window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
-
-    // PC 마우스 테스트 시뮬레이션
-    window.addEventListener('mousemove', (e) => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      // 화면 중앙을 0으로 기준 잡고 -40 ~ +40 기울기 시뮬레이션
-      const gamma = (e.clientX / w - 0.5) * 80; 
-      const beta = (e.clientY / h - 0.5) * 80;
-      updateHolo(gamma, beta);
-    });
-  }
+// 센서 초기화 및 안드로이드 대응
+async function init() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === 'granted') window.addEventListener('deviceorientation', e => updateLighting(e.gamma, e.beta));
+    } else {
+        window.addEventListener('deviceorientation', e => updateLighting(e.gamma, e.beta));
+        // PC 테스트용 (마우스를 광원으로 취급)
+        window.addEventListener('mousemove', e => {
+            const gx = (e.clientX / window.innerWidth - 0.5) * 60;
+            const gy = (e.clientY / window.innerHeight - 0.5) * 60;
+            updateLighting(gx, gy);
+        });
+    }
 }
 
-// 상호작용 후 센서 권한/이벤트 활성화
-btn.addEventListener('click', initSensors, { once: true });
+card.addEventListener('click', init, { once: true });
