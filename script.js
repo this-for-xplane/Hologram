@@ -1,53 +1,45 @@
 const btn = document.getElementById('enable');
 
 function updateHolo(gamma, beta) {
-  // 센서값 정규화 (-1 ~ 1)
+  // -1 ~ 1 범위로 정규화
   const x = Math.max(-1, Math.min(1, gamma / 45));
   const y = Math.max(-1, Math.min(1, beta / 45));
 
-  // 빛의 위치 (중심에서 얼마나 이동할지)
-  const posX = 50 + (x * 70); // 70으로 높여서 더 역동적으로 이동
-  const posY = 50 + (y * 70);
+  // 빛의 중심점 (스티커 내부 위치)
+  const posX = 50 + (x * 50);
+  const posY = 50 + (y * 50);
 
-  // 기울기에 따른 색상 변화 (0~360도)
-  const hue = ((x + y + 2) / 4) * 360;
-  
-  // 기울기가 클수록 빛을 더 진하게 (강도 조절)
-  const opacity = 0.5 + (Math.abs(x) + Math.abs(y)) * 0.25;
+  // 난반사 각도 계산 (기울기에 따라 무지개 띠가 회전)
+  const hueAngle = (gamma + beta) * 2;
 
   btn.style.setProperty('--x', `${posX}%`);
   btn.style.setProperty('--y', `${posY}%`);
-  btn.style.setProperty('--h', hue);
-  btn.style.setProperty('--o', opacity);
+  btn.style.setProperty('--h', hueAngle);
 
-  // 버튼의 3D 회전 (광택과 각도를 맞춤)
-  btn.style.transform = `rotateX(${-y * 20}deg) rotateY(${x * 20}deg)`;
+  // 버튼 회전은 아주 미세하게 (2도 정도만)
+  btn.style.transform = `perspective(500px) rotateX(${-y * 3}deg) rotateY(${x * 3}deg)`;
 }
 
-async function startHolo() {
-  // iOS 13+ 권한 요청 처리
+async function init() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     try {
-      const result = await DeviceOrientationEvent.requestPermission();
-      if (result === 'granted') {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      if (permission === 'granted') {
         window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (err) { console.error(err); }
   } else {
-    // 안드로이드/크롬 환경 (HTTPS 필수)
+    // 안드로이드 및 일반 환경
     window.addEventListener('deviceorientation', (e) => updateHolo(e.gamma, e.beta));
     
-    // PC 데스크탑 테스트용 마우스 이벤트
+    // 마우스 대응
     window.addEventListener('mousemove', (e) => {
       const rect = btn.getBoundingClientRect();
-      const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const my = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+      const mx = (e.clientX - rect.left) / rect.width * 2 - 1;
+      const my = (e.clientY - rect.top) / rect.height * 2 - 1;
       updateHolo(mx * 30, my * 30);
     });
   }
 }
 
-// 사용자 클릭 시 센서와 효과 시작
-btn.addEventListener('click', startHolo, { once: true });
+btn.addEventListener('click', init, { once: true });
