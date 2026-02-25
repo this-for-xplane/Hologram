@@ -1,63 +1,31 @@
 :root {
-  --diffraction: transparent; /* 초기값 */
-  /* 항공기 외장 같은 거친 질감을 위한 노이즈 SVG */
+  --diffraction: transparent;
   --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
 }
 
 body {
-  margin: 0;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #ffffff; /* 하얀 배경 */
+  margin: 0; height: 100vh;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  background: #ffffff;
 }
 
 .holo-card {
   position: relative;
-  width: 320px;
-  height: 320px;
-  background: #cfd8dc; /* 무광 알루미늄 베이스 */
-  border-radius: 4px;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  width: 280px; height: 280px;
+  background: #cfd8dc; border-radius: 4px; overflow: hidden;
+  cursor: pointer; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
   border: 1px solid #b0bec5;
 }
 
-/* 표면 질감 (울퉁불퉁한 느낌) */
-.surface-texture {
-  position: absolute;
-  inset: 0;
-  background-image: var(--grain);
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  z-index: 1;
-}
+.surface-texture { position: absolute; inset: 0; background-image: var(--grain); mix-blend-mode: multiply; z-index: 1; }
+.specular-layer { position: absolute; inset: -50%; background: var(--diffraction); mix-blend-mode: color-dodge; filter: saturate(0.6) brightness(1.2) contrast(1.1); z-index: 2; }
+.content { position: relative; z-index: 10; padding: 40px; color: #263238; mix-blend-mode: multiply; }
+.logo { font-size: 2.2rem; font-weight: 800; }
 
-/* 실시간 물리 계산 빛 레이어 */
-.specular-layer {
-  position: absolute;
-  inset: -50%;
-  /* JS에서 --diffraction 변수로 계산된 그래디언트를 여기에 꽂음 */
-  background: var(--diffraction);
-  mix-blend-mode: color-dodge; 
-  filter: saturate(0.6) brightness(1.2) contrast(1.1);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.content {
-  position: relative;
-  z-index: 10;
-  padding: 40px;
-  color: #263238;
-  mix-blend-mode: multiply;
-  pointer-events: none;
-}
-
-.logo {
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -1px;
+/* 디버그 콘솔 스타일 */
+#debug-console {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 120px; background: rgba(0, 0, 0, 0.8); color: #0f0;
+  font-family: monospace; font-size: 11px; padding: 10px;
+  overflow-y: auto; z-index: 9999; pointer-events: none;
 }
