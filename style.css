@@ -12,20 +12,48 @@ body {
 .holo-card {
   position: relative;
   width: 280px; height: 280px;
-  background: #cfd8dc; border-radius: 4px; overflow: hidden;
-  cursor: pointer; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  background: #cfd8dc; 
+  border-radius: 4px; 
+  overflow: hidden;
+  cursor: pointer; 
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
   border: 1px solid #b0bec5;
+  /* 하드웨어 가속 강제 */
+  transform: translateZ(0);
 }
 
-.surface-texture { position: absolute; inset: 0; background-image: var(--grain); mix-blend-mode: multiply; z-index: 1; }
-.specular-layer { position: absolute; inset: -50%; background: var(--diffraction); mix-blend-mode: color-dodge; filter: saturate(0.6) brightness(1.2) contrast(1.1); z-index: 2; }
-.content { position: relative; z-index: 10; padding: 40px; color: #263238; mix-blend-mode: multiply; }
-.logo { font-size: 2.2rem; font-weight: 800; }
+.surface-texture { 
+  position: absolute; inset: 0; 
+  background-image: var(--grain); 
+  mix-blend-mode: multiply; 
+  z-index: 1; 
+  pointer-events: none;
+}
 
-/* 디버그 콘솔 스타일 */
+/* 핵심: 배경이 안 나올 경우를 대비해 background-image를 명시적으로 변수와 연결 */
+.specular-layer { 
+  position: absolute; 
+  inset: -50%; 
+  background-image: var(--diffraction); 
+  background-repeat: no-repeat;
+  mix-blend-mode: color-dodge; 
+  filter: saturate(0.8) brightness(1.2) contrast(1.1); 
+  z-index: 5; /* 컨텐츠 바로 아래, 텍스처 위 */
+  pointer-events: none;
+  display: block; /* 가시성 확보 */
+}
+
+.content { 
+  position: relative; 
+  z-index: 10; 
+  padding: 40px; 
+  color: #263238; 
+  mix-blend-mode: multiply; 
+}
+
 #debug-console {
   position: fixed; bottom: 0; left: 0; right: 0;
-  height: 120px; background: rgba(0, 0, 0, 0.8); color: #0f0;
-  font-family: monospace; font-size: 11px; padding: 10px;
-  overflow-y: auto; z-index: 9999; pointer-events: none;
+  height: 80px; background: rgba(0, 0, 0, 0.8); color: #0f0;
+  font-family: monospace; font-size: 10px; padding: 5px;
+  overflow-y: auto; z-index: 9999;
 }
