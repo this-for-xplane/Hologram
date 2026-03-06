@@ -10,88 +10,106 @@ body {
   margin: 0;
   height: 100vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #121212; /* 홀로그램이 돋보이도록 전체 배경은 어둡게 */
-  overflow: hidden;
-  font-family: sans-serif;
+  background: #0f0f0f; /* 배경을 더 어둡게 해서 광택 극대화 */
 }
 
 .holo-card {
   position: relative;
-  width: 300px;
-  height: 300px;
-  background: #2b2b2b; /* 메탈릭한 느낌을 위해 다크 그레이 베이스 */
-  border-radius: 12px;
+  width: 320px;
+  height: 200px; /* 스티커/카드 비율 */
+  background: linear-gradient(135deg, #777 0%, #aaa 50%, #777 100%); /* 금속 베이스 */
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-  border: 1px solid #444;
-  touch-action: none;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
   transform-style: preserve-3d;
-  /* JS에서 넘겨준 변수로 3D 회전 */
   transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));
-  transition: transform 0.1s ease-out;
   will-change: transform;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 금속 표면 노이즈 질감 */
+/* 1. 홀로그램 특유의 미세한 격자/라인 패턴 */
 .surface-texture {
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
   z-index: 1;
-  pointer-events: none;
+  opacity: 0.3;
+  background-image: 
+    repeating-linear-gradient(90deg, transparent 0px, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px),
+    repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgba(255,255,255,0.1) 1px, rgba(255,255,255,0.1) 2px);
+  background-size: 3px 3px;
+  mix-blend-mode: overlay;
 }
 
-/* 찐 홀로그램 효과 레이어 */
+/* 2. 실제 무지개빛 일렁임 (스펙트럼) */
 .holo-glare {
   position: absolute;
-  inset: 0;
+  inset: -50%; /* 더 넓게 배치해서 움직임 확보 */
   z-index: 2;
-  pointer-events: none;
   opacity: var(--op);
-  /* 무지개 선형 그라데이션 + 빛반사 원형 그라데이션 믹스 */
-  background-image:
-    radial-gradient(
-      farthest-corner circle at var(--tx) var(--ty),
-      rgba(255, 255, 255, 0.9) 0%,
-      rgba(255, 255, 255, 0) 50%
-    ),
-    linear-gradient(
-      115deg,
-      transparent 20%,
-      rgba(255, 0, 132, 0.6) 30%,
-      rgba(252, 164, 0, 0.6) 40%,
-      rgba(255, 255, 0, 0.6) 50%,
-      rgba(0, 255, 138, 0.6) 60%,
-      rgba(0, 207, 255, 0.6) 70%,
-      rgba(204, 76, 250, 0.6) 80%,
-      transparent 90%
-    );
+  transition: opacity 0.5s ease;
+  
+  /* 진짜 스티커처럼 촘촘하고 쨍한 무지개색 배치 */
+  background: linear-gradient(
+    110deg,
+    #ff00ff 0%,   /* 마젠타 */
+    #7700ff 15%,  /* 보라 */
+    #0000ff 30%,  /* 파랑 */
+    #00ffff 45%,  /* 하늘 */
+    #00ff00 60%,  /* 초록 */
+    #ffff00 75%,  /* 노랑 */
+    #ff0000 90%,  /* 빨강 */
+    #ff00ff 100%
+  );
   background-size: 200% 200%;
-  /* JS에서 넘겨준 변수로 빛의 위치 이동 */
   background-position: var(--tx) var(--ty);
+  
+  /* 핵심: exclusion과 color-dodge의 조화 */
+  mix-blend-mode: exclusion; 
+  filter: brightness(0.8) contrast(1.5) saturate(1.2);
+}
+
+/* 3. 번쩍이는 강한 화이트 하이라이트 (플래시) */
+.holo-glare::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--tx) var(--ty),
+    rgba(255, 255, 255, 0.8) 0%,
+    transparent 60%
+  );
   mix-blend-mode: color-dodge;
-  transition: opacity 0.3s ease;
 }
 
 .content {
   position: relative;
   z-index: 10;
-  padding: 40px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  font-family: 'Arial Black', sans-serif;
   pointer-events: none;
 }
 
-.logo { font-size: 2.5rem; font-weight: 900; }
-.info { font-size: 0.8rem; margin-top: 5px; letter-spacing: 2px; opacity: 0.8; }
+.logo { 
+  font-size: 2.2rem; 
+  letter-spacing: -1px;
+  background: linear-gradient(to bottom, #fff, #ccc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
 
-#debug-console {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  height: 80px; background: rgba(0,0,0,0.85); color: #00ff00;
-  font-family: monospace; font-size: 10px; padding: 8px;
-  overflow-y: auto; z-index: 1000; pointer-events: none;
+.info { 
+  font-size: 0.7rem; 
+  margin-top: 10px; 
+  background: rgba(0,0,0,0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
 }
