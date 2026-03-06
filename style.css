@@ -1,3 +1,11 @@
+:root {
+  --rx: 0deg;
+  --ry: 0deg;
+  --tx: 50%;
+  --ty: 50%;
+  --op: 0;
+}
+
 body {
   margin: 0;
   height: 100vh;
@@ -5,7 +13,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #ffffff;
+  background: #121212; /* 홀로그램이 돋보이도록 전체 배경은 어둡게 */
   overflow: hidden;
   font-family: sans-serif;
 }
@@ -14,44 +22,67 @@ body {
   position: relative;
   width: 300px;
   height: 300px;
-  background: #bdc3c7; /* 알루미늄 베이스 */
+  background: #2b2b2b; /* 메탈릭한 느낌을 위해 다크 그레이 베이스 */
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-  border: 1px solid #aab0b3;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  border: 1px solid #444;
   touch-action: none;
   transform-style: preserve-3d;
+  /* JS에서 넘겨준 변수로 3D 회전 */
+  transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.1s ease-out;
   will-change: transform;
 }
 
-/* 금속 표면 질감 */
+/* 금속 표면 노이즈 질감 */
 .surface-texture {
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.2'/%3E%3C/svg%3E");
-  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
   z-index: 1;
   pointer-events: none;
 }
 
-/* 실시간 빛 레이어 (JS에서 제어) */
-.specular-layer {
+/* 찐 홀로그램 효과 레이어 */
+.holo-glare {
   position: absolute;
-  inset: -100%;
+  inset: 0;
   z-index: 2;
   pointer-events: none;
+  opacity: var(--op);
+  /* 무지개 선형 그라데이션 + 빛반사 원형 그라데이션 믹스 */
+  background-image:
+    radial-gradient(
+      farthest-corner circle at var(--tx) var(--ty),
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0) 50%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 20%,
+      rgba(255, 0, 132, 0.6) 30%,
+      rgba(252, 164, 0, 0.6) 40%,
+      rgba(255, 255, 0, 0.6) 50%,
+      rgba(0, 255, 138, 0.6) 60%,
+      rgba(0, 207, 255, 0.6) 70%,
+      rgba(204, 76, 250, 0.6) 80%,
+      transparent 90%
+    );
+  background-size: 200% 200%;
+  /* JS에서 넘겨준 변수로 빛의 위치 이동 */
+  background-position: var(--tx) var(--ty);
   mix-blend-mode: color-dodge;
-  filter: saturate(0.7) brightness(1.2) contrast(1.2);
-  opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.3s ease;
 }
 
 .content {
   position: relative;
   z-index: 10;
   padding: 40px;
-  color: #2c3e50;
-  mix-blend-mode: multiply;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   pointer-events: none;
 }
 
