@@ -1,9 +1,5 @@
-const card = document.getElementById('holoCard');
-const specLayer = document.querySelector('.specular-layer');
 const debug = document.getElementById('debug-console');
-
-let centerG = 0;
-let centerB = 0;
+const root = document.documentElement;
 let initialized = false;
 
 function log(msg) {
@@ -12,76 +8,71 @@ function log(msg) {
   debug.prepend(line);
 }
 
-function updateHolo(g, b) {
-  if (!initialized) return;
+// 핵심 계산: 마우스나 센서의 위치값을 받아 CSS 변수 업데이트
+function updateHolo(xPercentage, yPercentage) {
+  if (!initialized) {
+    initialized = true;
+    root.style.setProperty('--op', '1'); // 첫 입력 시 홀로그램 켜기
+  }
 
-  // 1. 기준점 대비 상대 각도
-  const relG = g - centerG;
-  const relB = b - centerB;
+  // 각도 계산 (-15도 ~ 15도)
+  const rx = (yPercentage - 0.5) * -30;
+  const ry = (xPercentage - 0.5) * 30;
 
-  // 2. 항공기 표면의 미세한 굴곡(Anisotropy) 시뮬레이션
-  // 기울기에 따라 빛이 직선으로 안 가고 일렁이게 함
-  const bumpX = Math.sin(relG * 0.12) * 15;
-  const bumpY = Math.cos(relB * 0.12) * 15;
+  // 빛의 위치 퍼센트 (0% ~ 100%)
+  const tx = xPercentage * 100;
+  const ty = yPercentage * 100;
 
-  // 3. 광원 위치 계산 (역방향 물리 반사)
-  const px = 50 - (relG * 2.0) + bumpX;
-  const py = 50 - (relB * 2.0) + bumpY;
-
-  // 4. 회절 파장(Hue) 결정 (은은한 파스텔톤)
-  const hue = (relG + relB + 720) % 360;
-
-  // 5. 비정형 조명 맵 생성 (원형을 파괴하기 위해 선형과 타원형 믹스)
-  const gradLinear = `linear-gradient(${45 + relG}deg, transparent 15%, hsla(${hue}, 50%, 85%, 0.2) 50%, transparent 85%)`;
-  const gradRadial = `radial-gradient(ellipse 70% 40% at ${px}% ${py}%, hsla(${(hue + 160) % 360}, 45%, 90%, 0.4) 0%, transparent 80%)`;
-
-  // 6. 스타일에 직접 주입
-  specLayer.style.backgroundImage = `${gradLinear}, ${gradRadial}`;
-  specLayer.style.opacity = "1";
-
-  // 카드 3D 기울기 효과
-  card.style.transform = `perspective(1000px) rotateX(${-relB * 0.08}deg) rotateY(${relG * 0.08}deg)`;
+  // CSS에 값 전달
+  root.style.setProperty('--rx', `${rx}deg`);
+  root.style.setProperty('--ry', `${ry}deg`);
+  root.style.setProperty('--tx', `${tx}%`);
+  root.style.setProperty('--ty', `${ty}%`);
 }
 
+// 1. PC 테스트용 마우스 이벤트 (항상 켜둠)
+window.addEventListener('mousemove', (e) => {
+  const xPercentage = e.clientX / window.innerWidth;
+  const yPercentage = e.clientY / window.innerHeight;
+  updateHolo(xPercentage, yPercentage);
+});
+
+// 2. 모바일 센서 이벤트 로직
 async function startEngine() {
   log("센서 활성화 시도 중...");
 
-  const onOrientation = (e) => {
-    if (!initialized) {
-      centerG = e.gamma || 0;
-      centerB = e.beta || 0;
-      initialized = true;
-      log("영점 조절 완료: 작동 시작");
-    }
-    updateHolo(e.gamma, e.beta);
+  const handleOrientation = (e) => {
+    // 안드로이드 센서값이 null로 들어오면 (HTTP 환경 등) 리턴
+    if (e.gamma === null || e.beta === null) return;
+
+    // 모바일을 들고 있는 각도 정규화 (보통 폰을 45도 기울여서 봄)
+    const xPercentage = Math.min(Math.max((e.gamma + 45) / 90, 0), 1);
+    const yPercentage = Math.min(Math.max((e.beta - 20) / 90, 0), 1);
+
+    updateHolo(xPercentage, yPercentage);
   };
 
-  // iOS 권한 요청
-  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+  // iOS 13+ 기기 방향 권한 요청
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     try {
       const permission = await DeviceOrientationEvent.requestPermission();
       if (permission === 'granted') {
-        window.addEventListener('deviceorientation', onOrientation);
+        window.addEventListener('deviceorientation', handleOrientation);
+        log("iOS 센서 권한 허용됨");
       } else {
         log("권한이 거부되었습니다.");
       }
     } catch (err) {
-      log("오류 발생: " + err.message);
+      log("오류 발생: HTTPS 환경이 맞는지 확인하세요.");
     }
   } else {
-    // 안드로이드 및 일반 브라우저
-    log("표준 센서 모드로 진입");
-    window.addEventListener('deviceorientation', onOrientation);
-    
-    // PC 테스트용 마우스 시뮬레이션
-    window.addEventListener('mousemove', (e) => {
-      if (!initialized) initialized = true;
-      const gx = (e.clientX / window.innerWidth - 0.5) * 80;
-      const gy = (e.clientY / window.innerHeight - 0.5) * 80;
-      updateHolo(gx, gy);
-    });
+    // 안드로이드 및 구형 브라우저
+    log("표준 센서 모드로 진입 (안드로이드는 HTTPS 필수)");
+    window.addEventListener('deviceorientation', handleOrientation);
   }
 }
 
-// 사용자의 첫 터치로 엔진 시동
-card.addEventListener('click', startEngine, { once: true });
+// 화면을 클릭하면 모바일 권한 요청(시동)
+document.body.addEventListener('click', () => {
+  if (!initialized) startEngine();
+}, { once: true });
