@@ -1,5 +1,4 @@
 # Hologram
 
 
-## 웹에서 진짜 홀로그램 스티커같은 요소를 추가하기 위해 테스트 중임
-
+## Testing Hologram Sticker Style Web Element For Future
