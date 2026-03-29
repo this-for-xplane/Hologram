@@ -1,4 +1,7 @@
-# Hologram
+# 💿 Hologram Style UI: PN-4760
 
+> **홀로그램 효과와 정교한 컬러 시스템을 결합한 테스트 UI**
 
-## Testing Hologram Sticker Style Web Element For Future
+이 프로젝트는 빛의 각도와 기기의 움직임에 따라 반응하는 홀로그램 카드 레이아웃을 구현한 웹 사이트입니다. 단순한 시각 효과를 넘어, 최신 컬러 모델을 활용하여 부드럽고 자연스러운 색상 변화를 탐구합니다.
+
+[실행 화면 보기 (Demo)](https://hologram-gold.vercel.app/)
