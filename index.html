@@ -3,22 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Aero Hologram</title>
+  <title>Aero Hologram Specimen</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <div id="holoCard" class="holo-card">
-    <div class="surface-texture"></div>
-    <div class="holo-glare"></div>
-    
-    <div class="content">
-      <div class="logo">PN-4760</div>
-      <div class="info">AERO-SPEC: 7075-T6</div>
-    </div>
-  </div>
+  <div class="vignette"></div>
 
-  <div id="debug-console">화면을 클릭하여 센서를 활성화하세요. (안드로이드는 HTTPS 필수)</div>
+  <main class="scene">
+    <header class="header">
+      <h1>AERO-SPECIMEN <span>PN-4760</span></h1>
+      <p>Interactive Holographic Security Label</p>
+    </header>
+
+    <div id="holoCard" class="holo-card">
+      <div class="surface-texture"></div>
+      <div class="holo-glare"></div>
+      
+      <div class="content">
+        <div class="logo">PN-4760</div>
+        <div class="info">AERO-SPEC: 7075-T6</div>
+        <div class="serial">SN: 2026-ALPHA-01</div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div id="debug-console">Tap to activate sensors</div>
+      <p class="hint">Tilt your device or move your mouse</p>
+    </footer>
+  </main>
 
   <script src="script.js"></script>
 </body>
