@@ -1,139 +1,91 @@
-:root {
-  --rx: 0deg;
-  --ry: 0deg;
-  --tx: 50%;
-  --ty: 50%;
-  --op: 0;
+/**
+ * script.js
+ * 파일 위치: /script.js
+ */
+
+const root = document.documentElement;
+const card = document.getElementById('holoCard');
+const debug = document.getElementById('debug-console');
+let initialized = false;
+
+function log(msg) {
+  if (!debug) return;
+  const line = document.createElement('div');
+  line.textContent = `> ${msg}`;
+  debug.prepend(line);
+  console.log(msg);
 }
 
-body {
-  margin: 0;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
-  color: #eee;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  overflow: hidden;
+// 홀로그램 시각 효과 업데이트 함수
+function updateHolo(xPerc, yPerc) {
+  if (!initialized) {
+    initialized = true;
+    root.style.setProperty('--op', '1');
+  }
+  
+  // 아이패드 파지 각도를 고려한 민감도 조절
+  // 0.5를 중심으로 최대 25도까지 회전
+  const rx = (yPerc - 0.5) * -25; 
+  const ry = (xPerc - 0.5) * 25;  
+  
+  root.style.setProperty('--rx', `${rx}deg`);
+  root.style.setProperty('--ry', `${ry}deg`);
+  root.style.setProperty('--tx', `${xPerc * 100}%`);
+  root.style.setProperty('--ty', `${yPerc * 100}%`);
 }
 
-/* 배경 비네팅 효과 */
-.vignette {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%);
-  pointer-events: none;
-  z-index: 5;
+// 센서 데이터 매핑 함수 (기기별 최적화)
+function handleOrientation(e) {
+  // e.beta: 앞뒤 기울기 (-180 ~ 180), e.gamma: 좌우 기울기 (-90 ~ 90)
+  if (e.gamma === null || e.beta === null) return;
+
+  // 아이패드를 세로로 들었을 때 기준 (기본 각도 보정)
+  // x축: 좌우 -30도 ~ +30도 범위를 0 ~ 1로 변환
+  // y축: 상하 10도 ~ 70도 범위를 0 ~ 1로 변환 (들고 보는 각도)
+  const x = Math.min(Math.max((e.gamma + 30) / 60, 0), 1);
+  const y = Math.min(Math.max((e.beta - 10) / 60, 0), 1);
+  
+  updateHolo(x, y);
 }
 
-.scene {
-  text-align: center;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
+// 권한 요청 함수
+async function startEngine() {
+  log("센서 활성화 시도...");
+
+  // iOS 13+ 권한 요청 처리
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try {
+      const response = await DeviceOrientationEvent.requestPermission();
+      log("권한 상태: " + response);
+      
+      if (response === 'granted') {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        log("센서 연결 성공!");
+      } else {
+        alert("센서 권한이 거부되었습니다. 설정에서 Safari의 동작 및 방향 접근을 허용해주세요.");
+      }
+    } catch (error) {
+      log("오류 발생: " + error.message);
+    }
+  } else {
+    // 안드로이드 및 일반 브라우저
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    log("표준 센서 연결");
+  }
 }
 
-.header h1 {
-  font-size: 0.9rem;
-  letter-spacing: 0.3rem;
-  color: rgba(255,255,255,0.5);
-  margin: 0;
-}
+// 1. 마우스 이동 (PC 대응)
+window.addEventListener('mousemove', (e) => {
+  updateHolo(e.clientX / window.innerWidth, e.clientY / window.innerHeight);
+});
 
-.header h1 span { color: #fff; }
-.header p { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 0.5rem; }
+// 2. 터치 이동 (백업)
+window.addEventListener('touchmove', (e) => {
+  const touch = e.touches[0];
+  updateHolo(touch.clientX / window.innerWidth, touch.clientY / window.innerHeight);
+}, { passive: true });
 
-.holo-card {
-  position: relative;
-  width: 340px;
-  height: 210px;
-  background: linear-gradient(135deg, #444 0%, #888 50%, #444 100%);
-  border-radius: 12px;
-  overflow: hidden;
-  /* 그림자를 다중으로 써서 바닥에서 뜬 느낌 강조 */
-  box-shadow: 
-    0 10px 20px rgba(0,0,0,0.5),
-    0 30px 60px rgba(0,0,0,0.3),
-    inset 0 0 0 1px rgba(255,255,255,0.1);
-  transform-style: preserve-3d;
-  transform: perspective(1200px) rotateX(var(--rx)) rotateY(var(--ry));
-  will-change: transform;
-  cursor: pointer;
-}
-
-/* 격자 패턴 개선 */
-.surface-texture {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  opacity: 0.15;
-  background-image: 
-    repeating-linear-gradient(90deg, #fff 0px, #fff 1px, transparent 1px, transparent 4px),
-    repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 1px, transparent 4px);
-  background-size: 4px 4px;
-  mix-blend-mode: overlay;
-}
-
-.holo-glare {
-  position: absolute;
-  inset: -100%; /* 범위를 더 넓혀서 빛의 이동 반경 확보 */
-  z-index: 2;
-  opacity: var(--op);
-  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(
-    110deg,
-    #ff0000 0%, #ffff00 14%, #00ff00 28%, #00ffff 42%, 
-    #0000ff 56%, #7700ff 70%, #ff00ff 84%, #ff0000 100%
-  );
-  background-size: 300% 300%;
-  background-position: var(--tx) var(--ty);
-  mix-blend-mode: color-dodge; /* exclusion보다 color-dodge가 금속 반사에 더 자연스러움 */
-  filter: brightness(0.7) contrast(1.4);
-}
-
-.content {
-  position: relative;
-  z-index: 10;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  pointer-events: none;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-
-.logo { 
-  font-size: 2.5rem; 
-  font-weight: 900;
-  letter-spacing: -2px;
-  color: #fff;
-}
-
-.serial {
-  font-size: 0.5rem;
-  margin-top: 15px;
-  font-family: monospace;
-  opacity: 0.5;
-}
-
-#debug-console {
-  font-size: 0.7rem;
-  color: #666;
-  font-family: monospace;
-  margin-bottom: 0.5rem;
-}
-
-.hint {
-  font-size: 0.8rem;
-  color: #444;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
-}
+// 3. 카드 클릭 시 권한 요청 (핵심!)
+card.addEventListener('click', () => {
+  startEngine();
+}, { once: true });
